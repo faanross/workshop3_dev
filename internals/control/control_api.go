@@ -58,7 +58,6 @@ func handleSwitch(w http.ResponseWriter, r *http.Request) {
 // StartControlAPI starts the control API server on port 8080
 func StartControlAPI() {
 	http.HandleFunc("/switch", handleSwitch)
-	http.HandleFunc("/command", handleCommand)
 
 	log.Println("Starting Control API on :8080")
 	go func() {

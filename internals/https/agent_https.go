@@ -32,7 +32,6 @@ func NewHTTPSAgent(serverAddr string) *HTTPSAgent {
 		serverAddr: serverAddr,
 		client:     client,
 	}
-
 }
 
 // Send implements Communicator.Send for HTTPS
@@ -61,7 +60,6 @@ func (c *HTTPSAgent) Send(ctx context.Context) ([]byte, error) {
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
-
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}

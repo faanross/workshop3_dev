@@ -2,14 +2,10 @@ package https
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"log"
-	"math/rand"
 	"net/http"
-	"os"
 	"time"
 	"workshop3_dev/internals/config"
 	"workshop3_dev/internals/control"
@@ -25,17 +21,7 @@ type HTTPSServer struct {
 
 // HTTPSResponse represents the JSON response for HTTPS
 type HTTPSResponse struct {
-	Change  bool            `json:"change"`
-	Job     bool            `json:"job"`     // is there a job (T) or not (F)
-	Command string          `json:"command"` // what is the actual command (for ex load)
-	Data    json.RawMessage `json:"data,omitempty"`
-	JobID   string          `json:"id,omitempty"`
-}
-
-// LoadArgs defines arguments for the "load" command.
-type LoadArgs struct {
-	ShellcodeBase64 string `json:"shellcode_base64"` // Base64 encoded shellcode (DLL)
-	ExportName      string `json:"export_name"`      // Name of the function to call in the DLL (e.g., "LaunchCalc", "RunMe")
+	Change bool `json:"change"`
 }
 
 // NewHTTPSServer creates a new HTTPS server
@@ -80,30 +66,8 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("HTTPS: Normal response (change=false)")
 	}
 
-	// Now, check if there is a pending command
-	cmd, exists := control.AgentCommands.GetCommand()
-
-	if exists {
-		log.Printf("The following command is being sent to agent: %s\n", cmd)
-		response.Job = true
-		response.Command = cmd
-
-		// Add command-specific arguments
-		cmdData, err := addCmdSpecificArgs(cmd)
-		if err != nil {
-			log.Printf("Error preparing command data: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-		response.Data = cmdData
-
-		response.JobID = fmt.Sprintf("job_%06d", rand.Intn(1000000))
-
-		log.Printf("Job prepared, ID: %s\n", response.JobID)
-
-	} else {
-		log.Printf("There is no command to send to agent")
-	}
+	// Set content type to JSON
+	w.Header().Set("Content-Type", "application/json")
 
 	// Encode and send the response
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -126,43 +90,4 @@ func (s *HTTPSServer) Stop() error {
 	defer cancel()
 
 	return s.server.Shutdown(ctx)
-}
-
-func addCmdSpecificArgs(cmd string) (json.RawMessage, error) {
-	switch cmd {
-	case "load":
-		return addLoadArgs()
-	default:
-		return nil, fmt.Errorf("unknown command: %s", cmd)
-	}
-}
-
-func addLoadArgs() (json.RawMessage, error) {
-	// Read the DLL file
-	dllBytes, err := os.ReadFile("./payloads/calc.dll")
-	if err != nil {
-		return nil, fmt.Errorf("failed to read DLL file: %w", err)
-	}
-
-	shellcodeB64 := base64.StdEncoding.EncodeToString(dllBytes)
-
-	args := LoadArgs{
-		ShellcodeBase64: shellcodeB64,
-		ExportName:      "LaunchCalc",
-	}
-
-	// Marshal the struct to JSON
-	jsonData, err := json.Marshal(args)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal LoadArgs: %w", err)
-	}
-
-	// Log what we're about to send
-	log.Printf("Prepared LoadArgs - ExportName: %s, Shellcode length: %d bytes",
-		args.ExportName,
-		len(args.ShellcodeBase64))
-
-	// Convert to json.RawMessage
-	return jsonData, nil
-
 }
