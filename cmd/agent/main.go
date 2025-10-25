@@ -1,14 +1,14 @@
 package main
 
 import (
-	"akkeDNSII/internals/config"
-	"akkeDNSII/internals/models"
-	"akkeDNSII/internals/runloop"
 	"context"
 	"flag"
 	"log"
 	"os"
 	"os/signal"
+	"workshop3_dev/internals/config"
+	"workshop3_dev/internals/models"
+	"workshop3_dev/internals/runloop"
 )
 
 const pathToYAML = "./configs/config.yaml"
