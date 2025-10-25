@@ -9,7 +9,8 @@ import (
 )
 
 type CommandType struct {
-	Command string `json:"command"`
+	Command   string          `json:"command"`
+	Arguments json.RawMessage `json:"data,omitempty"`
 }
 
 type CommandQueue struct {
@@ -35,15 +36,16 @@ func handleCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Decode the JSON body from the request
-	var cmdType CommandType
-	err := json.NewDecoder(r.Body).Decode(&cmdType)
+	var newCmd CommandType
+
+	err := json.NewDecoder(r.Body).Decode(&newCmd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// Convert received command to lowercase for comparison
-	receivedCmd := strings.ToLower(cmdType.Command)
+	receivedCmd := strings.ToLower(newCmd.Command)
 
 	// Set content-type for the response
 	w.Header().Set("Content-Type", "application/json")
@@ -52,12 +54,12 @@ func handleCommand(w http.ResponseWriter, r *http.Request) {
 	// Check if the lowercase command exists in the validCommands map
 	if _, ok := validCommands[receivedCmd]; ok {
 		// --- IF VALID ---
-		log.Printf("VALID Command Received: %s", cmdType.Command)
+		log.Printf("VALID Command Received: %s", newCmd.Command)
 		response = "Command is valid, accepted"
-		AgentCommands.addCommand(cmdType.Command)
+		AgentCommands.addCommand(newCmd.Command)
 	} else {
 		// --- IF INVALID ---
-		log.Printf("INVALID Command Received: %s", cmdType.Command)
+		log.Printf("INVALID Command Received: %s", newCmd.Command)
 		response = "Command is invalid, rejected"
 	}
 

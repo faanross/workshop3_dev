@@ -1,4 +1,4 @@
-module akkeDNSII
+module workshop3_dev
 
 go 1.23.0
 
