@@ -1,15 +1,15 @@
 package runloop
 
 import (
-	"akkeDNSII/internals/config"
-	"akkeDNSII/internals/https"
-	"akkeDNSII/internals/models"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
 	"time"
+	"workshop3_dev/internals/config"
+	"workshop3_dev/internals/https"
+	"workshop3_dev/internals/models"
 )
 
 func RunLoop(ctx context.Context, comm models.Agent, cfg *config.Config) error {

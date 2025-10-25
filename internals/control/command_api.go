@@ -75,7 +75,7 @@ func (cq *CommandQueue) addCommand(command CommandType) {
 
 	cq.PendingCommands = append(cq.PendingCommands, command.Command)
 
-	log.Printf("QUEUEING: %s", command)
+	log.Printf("QUEUEING: %s", command.Command)
 }
 
 func (cq *CommandQueue) GetCommand() (string, bool) {

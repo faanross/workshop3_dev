@@ -1,8 +1,8 @@
 package runloop
 
 import (
-	"akkeDNSII/internals/https"
 	"log"
+	"workshop3_dev/internals/https"
 )
 
 func executeTask(job https.HTTPSResponse) {

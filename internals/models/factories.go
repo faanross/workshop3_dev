@@ -1,10 +1,10 @@
 package models
 
 import (
-	"akkeDNSII/internals/config"
-	"akkeDNSII/internals/dns"
-	"akkeDNSII/internals/https"
 	"fmt"
+	"workshop3_dev/internals/config"
+	"workshop3_dev/internals/dns"
+	"workshop3_dev/internals/https"
 )
 
 // NewAgent creates a new communicator based on the protocol

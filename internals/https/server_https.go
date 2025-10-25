@@ -1,8 +1,6 @@
 package https
 
 import (
-	"akkeDNSII/internals/config"
-	"akkeDNSII/internals/control"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -13,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"workshop3_dev/internals/config"
+	"workshop3_dev/internals/control"
 )
 
 // HTTPSServer implements the Server interface for HTTPS

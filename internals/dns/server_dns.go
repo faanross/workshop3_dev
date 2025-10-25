@@ -1,11 +1,11 @@
 package dns
 
 import (
-	"akkeDNSII/internals/config"
-	"akkeDNSII/internals/control"
 	"github.com/miekg/dns"
 	"log"
 	"net"
+	"workshop3_dev/internals/config"
+	"workshop3_dev/internals/control"
 )
 
 // DNSServer implements the Server interface for DNS
