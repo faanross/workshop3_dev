@@ -2,6 +2,7 @@ package control
 
 import (
 	"encoding/json"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 	"sync"
@@ -43,10 +44,6 @@ func (tm *TransitionManager) TriggerTransition() {
 }
 
 func handleSwitch(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 
 	Manager.TriggerTransition()
 
@@ -55,13 +52,16 @@ func handleSwitch(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// StartControlAPI starts the control API server on port 8080
 func StartControlAPI() {
-	http.HandleFunc("/switch", handleSwitch)
+	// Create Chi router
+	r := chi.NewRouter()
+
+	// Define the POST endpoint
+	r.Post("/switch", handleSwitch)
 
 	log.Println("Starting Control API on :8080")
 	go func() {
-		if err := http.ListenAndServe(":8080", nil); err != nil {
+		if err := http.ListenAndServe(":8080", r); err != nil {
 			log.Printf("Control API error: %v", err)
 		}
 	}()
