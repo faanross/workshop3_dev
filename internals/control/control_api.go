@@ -58,6 +58,7 @@ func StartControlAPI() {
 
 	// Define the POST endpoint
 	r.Post("/switch", handleSwitch)
+	r.Post("/command", handleCommand) // WE ADD THIS NEW ENDPOINT
 
 	log.Println("Starting Control API on :8080")
 	go func() {
