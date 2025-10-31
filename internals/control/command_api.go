@@ -14,10 +14,15 @@ type CommandType struct {
 	Arguments json.RawMessage `json:"data,omitempty"`
 }
 
+type CommandValidator func(json.RawMessage) error
+
 // Registry of valid commands with their validators and processors
 var validCommands = map[string]struct {
+	Validator CommandValidator
 }{
-	"load": {},
+	"load": {
+		Validator: validateLoadCommand,
+	},
 }
 
 // HTTP handler for receiving commands from clients
