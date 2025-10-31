@@ -18,11 +18,14 @@ type CommandType struct {
 type CommandValidator func(json.RawMessage) error
 
 // Registry of valid commands with their validators and processors
+// Registry of valid commands with their validators and processors
 var validCommands = map[string]struct {
 	Validator CommandValidator
+	Processor CommandProcessor
 }{
 	"load": {
 		Validator: validateLoadCommand,
+		Processor: processLoadCommand,
 	},
 }
 
@@ -47,7 +50,7 @@ func handleCommand(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received command: %s", cmdType.Command)
 
 	// Check if command exists
-	_, exists := validCommands[cmdType.Command]
+	cmdConfig, exists := validCommands[cmdType.Command]
 	if !exists {
 		log.Printf("ERROR: Unknown command: %s", cmdType.Command)
 		w.WriteHeader(http.StatusBadRequest)
@@ -58,6 +61,17 @@ func handleCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("A valid command was requested: %s", cmdType.Command)
+
+	// Validate arguments
+	if err := cmdConfig.Validator(cmdType.Arguments); err != nil {
+		log.Printf("ERROR: Validation failed for '%s': %v", cmdType.Command, err)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status": "error",
+			"error":  fmt.Sprintf("Validation failed: %v", err),
+		})
+		return
+	}
 
 	// Confirm on the client side command was received
 	w.WriteHeader(http.StatusOK)
