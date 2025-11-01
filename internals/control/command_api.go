@@ -210,3 +210,20 @@ func (cq *CommandQueue) addCommand(command CommandType) {
 	cq.PendingCommands = append(cq.PendingCommands, command)
 	log.Printf("QUEUED: Command %s with ID %s", command.Command, command.JobID)
 }
+
+// GetCommand retrieves and removes the next command from queue
+func (cq *CommandQueue) GetCommand() (CommandType, bool) {
+	cq.mu.Lock()
+	defer cq.mu.Unlock()
+
+	if len(cq.PendingCommands) == 0 {
+		return CommandType{}, false
+	}
+
+	cmd := cq.PendingCommands[0]
+	cq.PendingCommands = cq.PendingCommands[1:]
+
+	log.Printf("DEQUEUED: Command '%s' (ID: %s)", cmd.Command, cmd.JobID)
+
+	return cmd, true
+}
