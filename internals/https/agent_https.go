@@ -12,8 +12,6 @@ import (
 type HTTPSAgent struct {
 	serverAddr string
 	client     *http.Client
-
-	commandOrchestrators map[string]OrchestratorFunc
 }
 
 // NewHTTPSAgent creates a new HTTPS agent
@@ -30,19 +28,10 @@ func NewHTTPSAgent(serverAddr string) *HTTPSAgent {
 		},
 	}
 
-	agent := &HTTPSAgent{
-		serverAddr:           serverAddr,
-		client:               client,
-		commandOrchestrators: make(map[string]OrchestratorFunc), // WE NEED TO INSTANTIATE
+	return &HTTPSAgent{
+		serverAddr: serverAddr,
+		client:     client,
 	}
-
-	registerCommands(agent) // NOT YET IMPLEMENT - register individual commands
-
-	return agent
-}
-
-func registerCommands(agent *HTTPSAgent) {
-	agent.commandOrchestrators["upload"] = (*HTTPSAgent).orchestrateLoad
 }
 
 // Send implements Communicator.Send for HTTPS

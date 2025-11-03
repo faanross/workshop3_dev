@@ -21,11 +21,7 @@ type HTTPSServer struct {
 
 // HTTPSResponse represents the JSON response for HTTPS
 type HTTPSResponse struct {
-	Change  bool            `json:"change"`
-	Job     bool            `json:"job"`
-	Command string          `json:"command"`
-	Data    json.RawMessage `json:"data,omitempty"`
-	JobID   string          `json:"id,omitempty"`
+	Change bool `json:"change"`
 }
 
 // NewHTTPSServer creates a new HTTPS server
@@ -68,19 +64,6 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("HTTPS: Sending transition signal (change=true)")
 	} else {
 		log.Printf("HTTPS: Normal response (change=false)")
-	}
-
-	// Check for pending commands
-	cmd, exists := control.AgentCommands.GetCommand()
-	if exists {
-		log.Printf("Sending command to agent: %s\n", cmd.Command)
-		response.Job = true
-		response.Command = cmd.Command
-		response.Data = cmd.Arguments
-		response.JobID = cmd.JobID
-		log.Printf("Job ID: %s\n", response.JobID)
-	} else {
-		log.Printf("No commands in queue")
 	}
 
 	// Set content type to JSON
