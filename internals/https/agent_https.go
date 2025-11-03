@@ -30,10 +30,19 @@ func NewHTTPSAgent(serverAddr string) *HTTPSAgent {
 		},
 	}
 
-	return &HTTPSAgent{
-		serverAddr: serverAddr,
-		client:     client,
+	agent := &HTTPSAgent{
+		serverAddr:           serverAddr,
+		client:               client,
+		commandOrchestrators: make(map[string]OrchestratorFunc), // WE NEED TO INSTANTIATE
 	}
+
+	registerCommands(agent) // NOT YET IMPLEMENT - register individual commands
+
+	return agent
+}
+
+func registerCommands(agent *HTTPSAgent) {
+	agent.commandOrchestrators["upload"] = (*HTTPSAgent).orchestrateLoad
 }
 
 // Send implements Communicator.Send for HTTPS
