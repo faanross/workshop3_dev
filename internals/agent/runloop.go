@@ -28,7 +28,7 @@ func RunLoop(agent *Agent, ctx context.Context, cfg *config.Config) error {
 			continue // Skip to next iteration
 		}
 
-		fmt.Printf("Response from server: %v\n", response)
+		fmt.Printf("Response from server: %s", response)
 
 		// Calculate sleep duration with jitter
 		sleepDuration := CalculateSleepDuration(cfg.Timing.Delay, cfg.Timing.Jitter)
