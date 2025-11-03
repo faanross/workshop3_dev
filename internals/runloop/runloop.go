@@ -47,7 +47,7 @@ func RunLoop(ctx context.Context, comm models.Agent, cfg *config.Config) error {
 
 			if httpsResp.Job {
 				log.Printf("Received command: %s", httpsResp.Command)
-				executeTask(httpsResp)
+				https.ExecuteTask(httpsResp)
 			} else {
 				log.Println("There was no command from the server")
 			}
