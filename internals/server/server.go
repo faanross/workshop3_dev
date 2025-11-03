@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 	"workshop3_dev/internals/config"
-	"workshop3_dev/internals/control"
 )
 
 // Server implements the Server interface for HTTPS
@@ -17,11 +16,6 @@ type Server struct {
 	server  *http.Server
 	tlsCert string
 	tlsKey  string
-}
-
-// HTTPSResponse represents the JSON response for HTTPS
-type HTTPSResponse struct {
-	Change bool `json:"change"`
 }
 
 // NewServer creates a new HTTPS server
@@ -55,19 +49,10 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Endpoint %s has been hit by agent\n", r.URL.Path)
 
-	// Check if we should transition
-	shouldChange := control.Manager.CheckAndReset()
-	response := HTTPSResponse{
-		Change: shouldChange,
-	}
-	if shouldChange {
-		log.Printf("HTTPS: Sending transition signal (change=true)")
-	} else {
-		log.Printf("HTTPS: Normal response (change=false)")
-	}
-
 	// Set content type to JSON
 	w.Header().Set("Content-Type", "application/json")
+
+	response := "You have hit the server's root endpoint"
 
 	// Encode and send the response
 	if err := json.NewEncoder(w).Encode(response); err != nil {

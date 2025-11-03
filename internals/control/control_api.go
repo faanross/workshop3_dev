@@ -5,43 +5,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
-	"sync"
 )
-
-// TransitionManager handles the global transition state
-type TransitionManager struct {
-	mu               sync.RWMutex
-	shouldTransition bool
-}
-
-// Global instance
-var Manager = &TransitionManager{
-	shouldTransition: false,
-}
-
-// CheckAndReset atomically checks if transition is needed and resets the flag
-// This ensures the transition signal is consumed only once
-func (tm *TransitionManager) CheckAndReset() bool {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-
-	if tm.shouldTransition {
-		tm.shouldTransition = false // Reset immediately
-		log.Printf("Transition signal consumed and reset")
-		return true
-	}
-
-	return false
-}
-
-// TriggerTransition sets the transition flag
-func (tm *TransitionManager) TriggerTransition() {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-
-	tm.shouldTransition = true
-	log.Printf("Transition triggered")
-}
 
 func dummyHandler(w http.ResponseWriter, r *http.Request) {
 
