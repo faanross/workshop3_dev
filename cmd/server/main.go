@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"workshop3_dev/internals/config"
 	"workshop3_dev/internals/control"
-	"workshop3_dev/internals/models"
+	"workshop3_dev/internals/server"
 )
 
 const pathToYAML = "./configs/config.yaml"
@@ -29,35 +29,13 @@ func main() {
 	// Create BOTH servers regardless of config
 	log.Printf("Starting both protocol servers on %s", cfg.ServerAddr)
 
-	// Create HTTPS server
-	httpsCfg := *cfg
-	httpsCfg.Protocol = "https"
-	httpsServer, err := models.NewServer(&httpsCfg)
-	if err != nil {
-		log.Fatalf("Failed to create HTTPS server: %v", err)
-	}
-
-	// Create DNS server
-	dnsCfg := *cfg
-	dnsCfg.Protocol = "dns"
-	dnsServer, err := models.NewServer(&dnsCfg)
-	if err != nil {
-		log.Fatalf("Failed to create DNS server: %v", err)
-	}
+	newServer := server.NewServer(cfg)
 
 	// Start HTTPS server in goroutine
 	go func() {
 		log.Printf("Starting HTTPS server on %s (TCP)", cfg.ServerAddr)
-		if err := httpsServer.Start(); err != nil {
+		if err := newServer.Start(); err != nil {
 			log.Fatalf("HTTPS server error: %v", err)
-		}
-	}()
-
-	// Start DNS server in goroutine
-	go func() {
-		log.Printf("Starting DNS server on %s (UDP)", cfg.ServerAddr)
-		if err := dnsServer.Start(); err != nil {
-			log.Fatalf("DNS server error: %v", err)
 		}
 	}()
 
@@ -69,11 +47,8 @@ func main() {
 	// Graceful shutdown
 	log.Println("Shutting down both servers...")
 
-	if err := httpsServer.Stop(); err != nil {
+	if err := newServer.Stop(); err != nil {
 		log.Printf("Error HTTPS stopping server: %v", err)
 	}
 
-	if err := dnsServer.Stop(); err != nil {
-		log.Printf("Error DNS stopping server: %v", err)
-	}
 }

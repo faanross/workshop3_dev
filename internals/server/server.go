@@ -1,4 +1,4 @@
-package https
+package server
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 	"workshop3_dev/internals/control"
 )
 
-// HTTPSServer implements the Server interface for HTTPS
-type HTTPSServer struct {
+// Server implements the Server interface for HTTPS
+type Server struct {
 	addr    string
 	server  *http.Server
 	tlsCert string
@@ -24,9 +24,9 @@ type HTTPSResponse struct {
 	Change bool `json:"change"`
 }
 
-// NewHTTPSServer creates a new HTTPS server
-func NewHTTPSServer(cfg *config.Config) *HTTPSServer {
-	return &HTTPSServer{
+// NewServer creates a new HTTPS server
+func NewServer(cfg *config.Config) *Server {
+	return &Server{
 		addr:    cfg.ServerAddr,
 		tlsCert: cfg.TlsCert,
 		tlsKey:  cfg.TlsKey,
@@ -34,7 +34,7 @@ func NewHTTPSServer(cfg *config.Config) *HTTPSServer {
 }
 
 // Start implements Server.Start for HTTPS
-func (s *HTTPSServer) Start() error {
+func (server *Server) Start() error {
 	// Create Chi router
 	r := chi.NewRouter()
 
@@ -42,13 +42,13 @@ func (s *HTTPSServer) Start() error {
 	r.Get("/", RootHandler)
 
 	// Create the HTTP server
-	s.server = &http.Server{
-		Addr:    s.addr,
+	server.server = &http.Server{
+		Addr:    server.addr,
 		Handler: r,
 	}
 
 	// Start the server
-	return s.server.ListenAndServeTLS(s.tlsCert, s.tlsKey)
+	return server.server.ListenAndServeTLS(server.tlsCert, server.tlsKey)
 }
 
 func RootHandler(w http.ResponseWriter, r *http.Request) {
@@ -79,9 +79,9 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Stop implements Server.Stop for HTTPS
-func (s *HTTPSServer) Stop() error {
+func (server *Server) Stop() error {
 	// If there's no server, nothing to stop
-	if s.server == nil {
+	if server.server == nil {
 		return nil
 	}
 
@@ -89,5 +89,5 @@ func (s *HTTPSServer) Stop() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	return s.server.Shutdown(ctx)
+	return server.server.Shutdown(ctx)
 }

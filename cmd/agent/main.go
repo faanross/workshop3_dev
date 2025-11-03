@@ -6,9 +6,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"workshop3_dev/internals/agent"
 	"workshop3_dev/internals/config"
-	"workshop3_dev/internals/models"
-	"workshop3_dev/internals/runloop"
 )
 
 const pathToYAML = "./configs/config.yaml"
@@ -24,10 +23,8 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	comm, err := models.NewAgent(cfg)
-	if err != nil {
-		log.Fatalf("Failed to create communicator: %v", err)
-	}
+	// Create our Agent instance
+	newAgent := agent.NewAgent(cfg.ServerAddr)
 
 	// Create context for cancellation
 	ctx, cancel := context.WithCancel(context.Background())
@@ -35,10 +32,10 @@ func main() {
 
 	// Start run loop in goroutine
 	go func() {
-		log.Printf("Starting %s client run loop", cfg.Protocol)
+		log.Printf("Starting Agent Run Loop")
 		log.Printf("Delay: %v, Jitter: %d%%", cfg.Timing.Delay, cfg.Timing.Jitter)
 
-		if err := runloop.RunLoop(ctx, comm, cfg); err != nil {
+		if err := agent.RunLoop(newAgent, ctx, cfg); err != nil {
 			log.Printf("Run loop error: %v", err)
 		}
 	}()
