@@ -26,16 +26,13 @@ func main() {
 	// Load our control API
 	control.StartControlAPI()
 
-	// Create BOTH servers regardless of config
-	log.Printf("Starting both protocol servers on %s", cfg.ServerAddr)
-
 	newServer := server.NewServer(cfg)
 
-	// Start HTTPS server in goroutine
+	// Start server in goroutine
 	go func() {
-		log.Printf("Starting HTTPS server on %s (TCP)", cfg.ServerAddr)
+		log.Printf("Starting  server on %s", cfg.ServerAddr)
 		if err := newServer.Start(); err != nil {
-			log.Fatalf("HTTPS server error: %v", err)
+			log.Fatalf("server error: %v", err)
 		}
 	}()
 
@@ -45,10 +42,10 @@ func main() {
 	<-sigChan
 
 	// Graceful shutdown
-	log.Println("Shutting down both servers...")
+	log.Println("Shutting down server...")
 
 	if err := newServer.Stop(); err != nil {
-		log.Printf("Error HTTPS stopping server: %v", err)
+		log.Printf("Error stopping server: %v", err)
 	}
 
 }

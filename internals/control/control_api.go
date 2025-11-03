@@ -11,7 +11,7 @@ func dummyHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("dummyHandler called")
 
-	response := "Protocol transition triggered"
+	response := "Dummy endpoint triggered"
 
 	json.NewEncoder(w).Encode(response)
 }

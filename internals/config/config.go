@@ -13,5 +13,5 @@ type Config struct {
 
 type TimingConfig struct {
 	Delay  time.Duration `yaml:"delay"`  // Base delay between cycles
-	Jitter int           `yaml:"jitter"` // Jitter percentage (0-100)}
+	Jitter int           `yaml:"jitter"` // Jitter percentage (0-100)
 }
