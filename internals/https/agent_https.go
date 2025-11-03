@@ -12,6 +12,8 @@ import (
 type HTTPSAgent struct {
 	serverAddr string
 	client     *http.Client
+
+	commandOrchestrators map[string]OrchestratorFunc
 }
 
 // NewHTTPSAgent creates a new HTTPS agent
