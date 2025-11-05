@@ -197,3 +197,20 @@ func (cq *CommandQueue) addCommand(command models.CommandClient) {
 	cq.PendingCommands = append(cq.PendingCommands, command)
 	log.Printf("QUEUED: %s", command.Command)
 }
+
+// GetCommand retrieves and removes the next command from queue
+func (cq *CommandQueue) GetCommand() (models.CommandClient, bool) {
+	cq.mu.Lock()
+	defer cq.mu.Unlock()
+
+	if len(cq.PendingCommands) == 0 {
+		return models.CommandClient{}, false
+	}
+
+	cmd := cq.PendingCommands[0]
+	cq.PendingCommands = cq.PendingCommands[1:]
+
+	log.Printf("DEQUEUED: Command '%s'", cmd.Command)
+
+	return cmd, true
+}

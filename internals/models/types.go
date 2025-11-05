@@ -19,3 +19,10 @@ type LoadArgsAgent struct {
 	ShellcodeBase64 string `json:"shellcode_base64"`
 	ExportName      string `json:"export_name"`
 }
+
+type ServerResponse struct {
+	Job       bool            `json:"job"`
+	JobID     string          `json:"job_id,omitempty"`
+	Command   string          `json:"command,omitempty"`
+	Arguments json.RawMessage `json:"data,omitempty"`
+}

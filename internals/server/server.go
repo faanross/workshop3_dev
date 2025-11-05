@@ -3,11 +3,15 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 	"workshop3_dev/internals/config"
+	"workshop3_dev/internals/control"
+	"workshop3_dev/internals/models"
 )
 
 // Server implements the Server interface for HTTPS
@@ -49,11 +53,24 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Endpoint %s has been hit by agent\n", r.URL.Path)
 
+	var response models.ServerResponse
+
+	// Check for pending commands
+	cmd, exists := control.AgentCommands.GetCommand()
+	if exists {
+		log.Printf("Sending command to agent: %s\n", cmd.Command)
+		response.Job = true
+		response.Command = cmd.Command
+		response.Arguments = cmd.Arguments
+		response.JobID = fmt.Sprintf("job_%06d", rand.Intn(1000000))
+		log.Printf("Job ID: %s\n", response.JobID)
+	} else {
+		log.Printf("No commands in queue")
+	}
+
 	// Set content type to JSON
 	w.Header().Set("Content-Type", "application/json")
-
-	response := "You have hit the server's root endpoint"
-
+	
 	// Encode and send the response
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Printf("Error encoding response: %v\n", err)
