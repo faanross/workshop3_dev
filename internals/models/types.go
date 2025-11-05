@@ -13,3 +13,9 @@ type LoadArgsClient struct {
 	FilePath   string `json:"file_path"`
 	ExportName string `json:"export_name"`
 }
+
+// LoadArgsAgent contains the command-specific arguments for Load as sent to the Agent
+type LoadArgsAgent struct {
+	ShellcodeBase64 string `json:"shellcode_base64"`
+	ExportName      string `json:"export_name"`
+}
