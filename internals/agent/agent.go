@@ -3,15 +3,19 @@ package agent
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"workshop3_dev/internals/models"
 )
 
 // Agent implements the Communicator interface for HTTPS
 type Agent struct {
 	serverAddr string
 	client     *http.Client
+
+	commandOrchestrators map[string]OrchestratorFunc
 }
 
 // NewAgent creates a new HTTPS agent
@@ -28,14 +32,19 @@ func NewAgent(serverAddr string) *Agent {
 		},
 	}
 
-	return &Agent{
-		serverAddr: serverAddr,
-		client:     client,
+	agent := &Agent{
+		serverAddr:           serverAddr,
+		client:               client,
+		commandOrchestrators: make(map[string]OrchestratorFunc), // WE NEED TO INSTANTIATE
 	}
+
+	registerCommands(agent) // NOT YET IMPLEMENT - register individual commands
+
+	return agent
 }
 
 // Send implements Communicator.Send for HTTPS
-func (agent *Agent) Send(ctx context.Context) ([]byte, error) {
+func (agent *Agent) Send(ctx context.Context) (*models.ServerResponse, error) {
 	// Construct the URL
 	url := fmt.Sprintf("https://%s/", agent.serverAddr)
 
@@ -64,6 +73,12 @@ func (agent *Agent) Send(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
 
-	// Return the raw JSON as message data
-	return body, nil
+	// Unmarshal into ServerResponse
+	var serverResp models.ServerResponse
+	if err := json.Unmarshal(body, &serverResp); err != nil {
+		return nil, fmt.Errorf("unmarshaling response: %w", err)
+	}
+
+	// Return the parsed response
+	return &serverResp, nil
 }

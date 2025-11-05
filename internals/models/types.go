@@ -26,3 +26,10 @@ type ServerResponse struct {
 	Command   string          `json:"command,omitempty"`
 	Arguments json.RawMessage `json:"data,omitempty"`
 }
+
+type AgentTaskResult struct {
+	JobID         string          `json:"job_id"`
+	Success       bool            `json:"success"`
+	CommandResult json.RawMessage `json:"command_result,omitempty"`
+	Error         error           `json:"error,omitempty"`
+}
