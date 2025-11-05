@@ -1,3 +1,5 @@
+//go:build windows
+
 package shellcode
 
 import (
@@ -129,7 +131,7 @@ func New() CommandShellcode {
 
 // DoShellcode loads and runs the given DLL bytes in the current process.
 func (rl *windowsShellcode) DoShellcode(
-	dllBytes []byte,   // DLL content as byte slice
+	dllBytes []byte, // DLL content as byte slice
 	exportName string, // Name of the function to call
 ) (models.LoadResult, error) {
 
@@ -330,7 +332,7 @@ func (rl *windowsShellcode) DoShellcode(
 			currentDescAddr := importDescBase + uintptr(i)*importDescSize
 			if currentDescAddr < allocBase || currentDescAddr+importDescSize > allocBase+allocSize {
 				msg := fmt.Sprintf("IAT: Descriptor address 0x%X out of bounds", currentDescAddr)
-				return models.ShellcodeResult{Message: msg}, errors.New(msg)
+				return models.LoadResult{Message: msg}, errors.New(msg)
 			}
 			importDesc := (*IMAGE_IMPORT_DESCRIPTOR)(unsafe.Pointer(currentDescAddr))
 			if importDesc.OriginalFirstThunk == 0 && importDesc.FirstThunk == 0 {
@@ -346,7 +348,7 @@ func (rl *windowsShellcode) DoShellcode(
 			dllNamePtrAddr := allocBase + uintptr(dllNameRVA)
 			if dllNamePtrAddr < allocBase || dllNamePtrAddr >= allocBase+allocSize {
 				msg := fmt.Sprintf("IAT: DLL Name VA 0x%X out of bounds", dllNamePtrAddr)
-				return models.ShellcodeResult{Message: msg}, errors.New(msg)
+				return models.LoadResult{Message: msg}, errors.New(msg)
 			}
 			dllName := windows.BytePtrToString((*byte)(unsafe.Pointer(dllNamePtrAddr)))
 			log.Printf("|📋 SHELLCODE DETAILS| [->] Processing imports for: %s", dllName)
@@ -354,7 +356,7 @@ func (rl *windowsShellcode) DoShellcode(
 			hModule, loadErr := windows.LoadLibrary(dllName)
 			if loadErr != nil {
 				msg := fmt.Sprintf("Failed to load dependency library '%s': %v", dllName, loadErr)
-				return models.ShellcodeResult{Message: msg}, fmt.Errorf(msg)
+				return models.LoadResult{Message: msg}, fmt.Errorf(msg)
 			}
 
 			iltRVA := importDesc.OriginalFirstThunk
@@ -376,7 +378,7 @@ func (rl *windowsShellcode) DoShellcode(
 				iatEntryAddr := iatBase + (j * entrySize)
 				if iltEntryAddr < allocBase || iltEntryAddr+entrySize > allocBase+allocSize { // Check entry size too
 					msg := fmt.Sprintf("IAT: ILT Entry VA 0x%X out of bounds for %s", iltEntryAddr, dllName)
-					return models.ShellcodeResult{Message: msg}, errors.New(msg)
+					return models.LoadResult{Message: msg}, errors.New(msg)
 				}
 				iltEntry := *(*uintptr)(unsafe.Pointer(iltEntryAddr))
 				if iltEntry == 0 {
@@ -414,11 +416,11 @@ func (rl *windowsShellcode) DoShellcode(
 
 				if procErr != nil || funcAddr == 0 {
 					msg := fmt.Sprintf("Failed to resolve import %s from %s: %v (Addr: 0x%X)", importNameStr, dllName, procErr, funcAddr)
-					return models.ShellcodeResult{Message: msg}, fmt.Errorf(msg)
+					return models.LoadResult{Message: msg}, fmt.Errorf(msg)
 				}
 				if iatEntryAddr < allocBase || iatEntryAddr+entrySize > allocBase+allocSize {
 					msg := fmt.Sprintf("IAT: IAT Entry VA 0x%X out of bounds for %s", iatEntryAddr, importNameStr)
-					return models.ShellcodeResult{Message: msg}, errors.New(msg)
+					return models.LoadResult{Message: msg}, errors.New(msg)
 				}
 				*(*uintptr)(unsafe.Pointer(iatEntryAddr)) = funcAddr
 			}
@@ -438,14 +440,14 @@ func (rl *windowsShellcode) DoShellcode(
 		ret, _, callErr := syscall.SyscallN(entryPointAddr, allocBase, DLL_PROCESS_ATTACH, 0)
 		if callErr != 0 && callErr != windows.ERROR_SUCCESS { // ERROR_SUCCESS (0) means no syscall error
 			msg := fmt.Sprintf("DllMain syscall error: %v (errno: %d)", callErr, callErr)
-			return models.ShellcodeResult{Message: msg}, fmt.Errorf(msg)
+			return models.LoadResult{Message: msg}, fmt.Errorf(msg)
 		}
 		if ret == 0 { // DllMain returns BOOL (FALSE on error)
 			msg := "DllMain reported initialization failure (returned FALSE)"
 			// It's possible DllMain returning FALSE is not a "fatal" error for the loader,
 			// but rather an indication the DLL itself doesn't want to proceed.
 			// However, for many DLLs, a FALSE on attach is problematic.
-			return models.ShellcodeResult{Message: msg}, errors.New(msg)
+			return models.LoadResult{Message: msg}, errors.New(msg)
 		}
 		log.Println("|⚙️ SHELLCODE ACTION| [+] DllMain executed successfully (returned TRUE).")
 	}
@@ -481,7 +483,7 @@ func (rl *windowsShellcode) DoShellcode(
 
 	if targetFuncAddr == 0 {
 		msg := fmt.Sprintf("Target function '%s' not found in Export Directory.", targetFunctionName)
-		return models.ShellcodeResult{Message: msg}, errors.New(msg)
+		return models.LoadResult{Message: msg}, errors.New(msg)
 	}
 
 	log.Printf("|⚙️ SHELLCODE ACTION| [+] Calling target function '%s' at 0x%X...", targetFunctionName, targetFuncAddr)
@@ -492,15 +494,15 @@ func (rl *windowsShellcode) DoShellcode(
 	retExport, _, callErrExport := syscall.SyscallN(targetFuncAddr) // Call with 0 arguments
 	if callErrExport != 0 && callErrExport != windows.ERROR_SUCCESS {
 		msg := fmt.Sprintf("Syscall error during '%s' call: %v", targetFunctionName, callErrExport)
-		return models.ShellcodeResult{Message: msg}, fmt.Errorf(msg)
+		return models.LoadResult{Message: msg}, fmt.Errorf(msg)
 	}
 	if retExport == 0 { // Your LaunchCalc returns BOOL, 0 indicates failure
 		msg := fmt.Sprintf("Exported function '%s' reported failure (returned FALSE/0).", targetFunctionName)
-		return models.ShellcodeResult{Message: msg}, errors.New(msg)
+		return models.LoadResult{Message: msg}, errors.New(msg)
 	}
 	log.Printf("|⚙️ SHELLCODE ACTION| [+] Exported function '%s' executed successfully (returned TRUE/non-zero: %d).", targetFunctionName, retExport)
 	log.Printf("|⚙️ SHELLCODE ACTION| ==> Check if '%s' (e.g., Calculator) launched by DLL! <===", "calc.exe")
 
 	finalMsg := fmt.Sprintf("DLL loaded and export '%s' called successfully.", exportName)
-	return models.ShellcodeResult{Message: finalMsg}, nil
+	return models.LoadResult{Message: finalMsg}, nil
 }

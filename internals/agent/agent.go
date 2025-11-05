@@ -1,11 +1,13 @@
 package agent
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"workshop3_dev/internals/models"
 )
@@ -81,4 +83,33 @@ func (agent *Agent) Send(ctx context.Context) (*models.ServerResponse, error) {
 
 	// Return the parsed response
 	return &serverResp, nil
+}
+
+// SendResult performs a POST request to the ResultsEndpoint to submit task results.
+func (agent *Agent) SendResult(resultData []byte) error {
+
+	targetURL := fmt.Sprintf("https://%s/results", agent.serverAddr)
+
+	log.Printf("|RETURN RESULTS|-> Sending %d bytes of results via POST to %s", len(resultData), targetURL)
+
+	// CREATE THE HTTP POST REQUEST
+	req, err := http.NewRequest(http.MethodPost, targetURL, bytes.NewReader(resultData))
+	if err != nil {
+		log.Printf("|❗ERR SendResult| Failed to create results request: %v", err)
+		return fmt.Errorf("failed to create http results request: %w", err)
+	}
+
+	// SET THE HEADERS
+	req.Header.Set("Content-Type", "application/json")
+
+	// EXECUTE THE REQUEST
+	resp, err := agent.client.Do(req)
+	if err != nil {
+		log.Printf("|❗ERR COMM H2TLS| Results POST request failed: %v", err)
+		return fmt.Errorf("http results post request failed: %w", err)
+	}
+	defer resp.Body.Close() // Close body even if we don't read it, to release resources
+
+	log.Printf("|COMM H2TLS|-> Successfully sent results.")
+	return nil
 }

