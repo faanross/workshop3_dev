@@ -33,3 +33,7 @@ type AgentTaskResult struct {
 	CommandResult json.RawMessage `json:"command_result,omitempty"`
 	Error         error           `json:"error,omitempty"`
 }
+
+type LoadResult struct {
+	Message string
+}
