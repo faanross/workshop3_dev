@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
-	"workshop3_dev/internals/config"
 	"workshop3_dev/internals/control"
 	"workshop3_dev/internals/models"
 )
@@ -23,11 +22,11 @@ type Server struct {
 }
 
 // NewServer creates a new HTTPS server
-func NewServer(cfg *config.Config) *Server {
+func NewServer(addr string) *Server {
 	return &Server{
-		addr:    cfg.ServerAddr,
-		tlsCert: cfg.TlsCert,
-		tlsKey:  cfg.TlsKey,
+		addr:    addr,
+		tlsCert: "./certs/server.crt",
+		tlsKey:  "./certs/server.key",
 	}
 }
 
@@ -70,7 +69,7 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Set content type to JSON
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	// Encode and send the response
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Printf("Error encoding response: %v\n", err)

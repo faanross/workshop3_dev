@@ -8,18 +8,7 @@ type CommandClient struct {
 	Arguments json.RawMessage `json:"data,omitempty"`
 }
 
-// LoadArgsClient contains the command-specific arguments for Load as sent by Client
-type LoadArgsClient struct {
-	FilePath   string `json:"file_path"`
-	ExportName string `json:"export_name"`
-}
-
-// LoadArgsAgent contains the command-specific arguments for Load as sent to the Agent
-type LoadArgsAgent struct {
-	ShellcodeBase64 string `json:"shellcode_base64"`
-	ExportName      string `json:"export_name"`
-}
-
+// ServerResponse represents a response from the server to the agent
 type ServerResponse struct {
 	Job       bool            `json:"job"`
 	JobID     string          `json:"job_id,omitempty"`
@@ -34,6 +23,14 @@ type AgentTaskResult struct {
 	Error         error           `json:"error,omitempty"`
 }
 
-type LoadResult struct {
-	Message string
+// ShellcodeArgsClient contains the command-specific arguments for Shellcode Loader as sent by Client
+type ShellcodeArgsClient struct {
+	FilePath   string `json:"file_path"`
+	ExportName string `json:"export_name"`
+}
+
+// ShellcodeArgsAgent contains the command-specific arguments for Shellcode Loader as sent to the Agent
+type ShellcodeArgsAgent struct {
+	ShellcodeBase64 string `json:"shellcode_base64"`
+	ExportName      string `json:"export_name"`
 }

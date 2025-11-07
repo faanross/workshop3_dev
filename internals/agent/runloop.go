@@ -5,10 +5,9 @@ import (
 	"log"
 	"math/rand"
 	"time"
-	"workshop3_dev/internals/config"
 )
 
-func RunLoop(agent *Agent, ctx context.Context, cfg *config.Config) error {
+func RunLoop(agent *Agent, ctx context.Context, delay time.Duration, jitter int) error {
 
 	for {
 		// Check if context is cancelled
@@ -23,7 +22,7 @@ func RunLoop(agent *Agent, ctx context.Context, cfg *config.Config) error {
 		if err != nil {
 			log.Printf("Error sending request: %v", err)
 			// Don't exit - just sleep and try again
-			time.Sleep(cfg.Timing.Delay)
+			time.Sleep(delay)
 			continue // Skip to next iteration
 		}
 
@@ -35,7 +34,7 @@ func RunLoop(agent *Agent, ctx context.Context, cfg *config.Config) error {
 		}
 
 		// Calculate sleep duration with jitter
-		sleepDuration := CalculateSleepDuration(cfg.Timing.Delay, cfg.Timing.Jitter)
+		sleepDuration := CalculateSleepDuration(delay, jitter)
 
 		log.Printf("Sleeping for %v", sleepDuration)
 

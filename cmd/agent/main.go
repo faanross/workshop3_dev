@@ -2,29 +2,21 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
 	"os"
 	"os/signal"
+	"time"
 	"workshop3_dev/internals/agent"
-	"workshop3_dev/internals/config"
 )
 
-const pathToYAML = "./configs/config.yaml"
-
 func main() {
-	// Command line flag for config file path
-	configPath := flag.String("config", pathToYAML, "path to configuration file")
-	flag.Parse()
 
-	// Load configuration
-	cfg, err := config.LoadConfig(*configPath)
-	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
-	}
+	serverAddr := "0.0.0.0:8443"
+	delay := 5 * time.Second
+	jitter := 50
 
 	// Create our Agent instance
-	newAgent := agent.NewAgent(cfg.ServerAddr)
+	newAgent := agent.NewAgent(serverAddr)
 
 	// Create context for cancellation
 	ctx, cancel := context.WithCancel(context.Background())
@@ -33,9 +25,9 @@ func main() {
 	// Start run loop in goroutine
 	go func() {
 		log.Printf("Starting Agent Run Loop")
-		log.Printf("Delay: %v, Jitter: %d%%", cfg.Timing.Delay, cfg.Timing.Jitter)
+		log.Printf("Delay: %v, Jitter: %d%%", delay, jitter)
 
-		if err := agent.RunLoop(newAgent, ctx, cfg); err != nil {
+		if err := agent.RunLoop(newAgent, ctx, delay, jitter); err != nil {
 			log.Printf("Run loop error: %v", err)
 		}
 	}()
