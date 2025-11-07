@@ -1,0 +1,45 @@
+package control
+
+import (
+	"encoding/json"
+	"log"
+	"sync"
+	"workshop3_dev/internals/models"
+)
+
+// Registry of valid commands with their validators and processors
+var validCommands = map[string]struct {
+	Validator CommandValidator
+	Processor CommandProcessor
+}{
+	"shellcode": {
+		Validator: validateShellcodeCommand,
+		Processor: processShellcodeCommand,
+	},
+}
+
+// CommandValidator validates command-specific arguments
+type CommandValidator func(json.RawMessage) error
+
+// CommandProcessor processes command-specific arguments
+type CommandProcessor func(json.RawMessage) (json.RawMessage, error)
+
+// CommandQueue stores commands ready for agent pickup
+type CommandQueue struct {
+	PendingCommands []models.CommandClient
+	mu              sync.Mutex
+}
+
+// AgentCommands is Global command queue
+var AgentCommands = CommandQueue{
+	PendingCommands: make([]models.CommandClient, 0),
+}
+
+// addCommand adds a validated command to the queue
+func (cq *CommandQueue) addCommand(command models.CommandClient) {
+	cq.mu.Lock()
+	defer cq.mu.Unlock()
+
+	cq.PendingCommands = append(cq.PendingCommands, command)
+	log.Printf("QUEUED: %s", command.Command)
+}
