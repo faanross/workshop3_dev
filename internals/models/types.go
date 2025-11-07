@@ -34,3 +34,7 @@ type ShellcodeArgsAgent struct {
 	ShellcodeBase64 string `json:"shellcode_base64"`
 	ExportName      string `json:"export_name"`
 }
+
+type ShellcodeResult struct {
+	Message string `json:"message"`
+}

@@ -38,6 +38,9 @@ func (server *Server) Start() error {
 	// Define our GET endpoint
 	r.Get("/", RootHandler)
 
+	// Define our POST endpoint for results
+	r.Post("/results", ResultHandler)
+
 	// Create the HTTP server
 	server.server = &http.Server{
 		Addr:    server.addr,
@@ -91,4 +94,26 @@ func (server *Server) Stop() error {
 	defer cancel()
 
 	return server.server.Shutdown(ctx)
+}
+
+func ResultHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Endpoint %s has been hit by agent\n", r.URL.Path)
+
+	var result models.AgentTaskResult
+	// var shellcodeMsg models.ShellcodeResult
+
+	// The first thing we need to do is unmarshall the request body into the custom type
+	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
+		log.Printf("ERROR: Failed to decode JSON: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode("error decoding JSON")
+		return
+	}
+
+	if !result.Success {
+		log.Printf("Job (ID: %s) has failed\nMessage: %v\nError: %s", result.JobID, result.CommandResult, result.Error)
+	} else {
+		log.Printf("Job (ID: %s) has succeeded\nMessage: %v", result.JobID, result.CommandResult)
+	}
+	
 }

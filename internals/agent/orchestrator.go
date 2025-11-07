@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"workshop3_dev/internals/models"
+	"workshop3_dev/internals/shellcode"
 )
 
 // orchestrateShellcode is the orchestrator for the "shellcode" command.
